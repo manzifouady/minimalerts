@@ -28,21 +28,80 @@ This folder contains an incident monitor that sends email and SMS alerts when th
 - `state.json`: internal monitor state (auto-created)
 - `requirements.txt`: Python dependency list
 
-## Install / Enable
+## Automatic Installation
+
+The installation script automatically sets up everything including systemd services and scheduling:
 
 ```bash
-cp /root/server-alerts/config.sample.json /root/server-alerts/config.json
-# edit config.json with your real credentials/recipients
+# Clone or download the repository
+cd /root
+git clone https://github.com/iamsoorena/minimalerts.git server-alerts
+cd server-alerts
 
-python3 -m venv /root/server-alerts/.venv
-/root/server-alerts/.venv/bin/pip install -U pip
-/root/server-alerts/.venv/bin/pip install -r /root/server-alerts/requirements.txt
-chmod 600 /root/server-alerts/config.json
-systemctl daemon-reload
-systemctl enable --now server-health-monitor.timer
+# Run the automatic installation (requires root/sudo)
+sudo ./install.sh
+```
+
+**What the installation script does:**
+1. ✅ Creates `config.json` from template
+2. ✅ Sets up Python virtual environment (`.venv`)
+3. ✅ Installs all dependencies
+4. ✅ Configures proper file permissions
+5. ✅ Installs systemd service and timer
+6. ✅ Enables automatic monitoring (runs every 5 minutes)
+7. ✅ Tests the installation
+
+### Manual Installation (Alternative)
+
+If you prefer manual setup:
+
+```bash
+# Copy configuration
+cp config.sample.json config.json
+# Edit config.json with your credentials
+
+# Create virtual environment
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+
+# Install systemd files
+sudo cp server-health-monitor.service /etc/systemd/system/
+sudo cp server-health-monitor.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now server-health-monitor.timer
 ```
 
 `config.json`, `state.json`, and `.venv` are ignored by git to avoid leaking secrets.
+
+## Automatic Scheduling
+
+After installation, the monitor runs **automatically every 5 minutes** using systemd timers:
+
+- **Service**: `server-health-monitor.service` - Executes the monitoring check
+- **Timer**: `server-health-monitor.timer` - Triggers the service every 5 minutes
+- **On Boot**: Starts 5 minutes after system boot
+- **Persistent**: Catches up on missed runs after reboots
+
+### Scheduling Details
+```
+Timer: server-health-monitor.timer
+├── Runs every: 5 minutes
+├── Accuracy: ±1 minute
+├── On boot delay: 5 minutes
+└── Persistent: Yes (catches up after downtime)
+```
+
+### Checking Schedule Status
+```bash
+# Check if timer is active
+systemctl status server-health-monitor.timer
+
+# See next run time
+systemctl list-timers server-health-monitor.timer
+
+# View execution logs
+journalctl -u server-health-monitor.service -f
+```
 
 ## Restarting Services After Configuration Changes
 
@@ -79,19 +138,48 @@ If you're using cron instead of systemd timers, no restart is needed - the next 
 
 ## Useful Commands
 
+### Installation & Status
 ```bash
-# run one health check
-/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --run-once
+# Install automatically (run as root)
+sudo ./install.sh
 
-# run internal self-test (no notifications sent)
-/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --self-test
+# Check service status
+systemctl status server-health-monitor.timer
+systemctl status server-health-monitor.service
 
-# send a test alert (email + sms)
-/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --test-alert
+# View next scheduled run
+systemctl list-timers server-health-monitor.timer
 
-# inspect logs
-journalctl -u server-health-monitor.service -n 100 --no-pager
-journalctl -u server-health-monitor.timer -n 50 --no-pager
+# View service logs
+journalctl -u server-health-monitor.service -f
+journalctl -u server-health-monitor.timer -f
+```
+
+### Manual Testing
+```bash
+# Run one health check
+.venv/bin/python monitor.py --run-once
+
+# Run internal self-test (no notifications sent)
+.venv/bin/python monitor.py --self-test
+
+# Send test alert (email + SMS)
+.venv/bin/python monitor.py --test-alert
+```
+
+### Configuration & Troubleshooting
+```bash
+# Edit configuration
+nano config.json
+
+# Restart timer after config changes
+sudo systemctl restart server-health-monitor.timer
+
+# Force immediate check
+sudo systemctl start server-health-monitor.service
+
+# View recent logs
+journalctl -u server-health-monitor.service -n 20 --no-pager
 ```
 
 ## Default Thresholds (Current)

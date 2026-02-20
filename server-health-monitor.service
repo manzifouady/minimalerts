@@ -1,0 +1,27 @@
+[Unit]
+Description=Server Health Monitor Service
+After=network.target
+Wants=network.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/root/server-alerts
+ExecStart=/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --run-once
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=server-health-monitor
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/root/server-alerts/state.json
+ProtectHome=yes
+
+# Restart on failure
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
