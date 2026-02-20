@@ -445,10 +445,26 @@ def main():
     parser = argparse.ArgumentParser(description="Server health monitor")
     parser.add_argument("--run-once", action="store_true", help="run a single check")
     parser.add_argument("--test-alert", action="store_true", help="send a test alert immediately")
+    parser.add_argument("--test-email", action="store_true", help="send a test email only")
     parser.add_argument("--self-test", action="store_true", help="collect metrics and print evaluation without sending notifications")
     args = parser.parse_args()
 
     cfg = load_json(CONFIG_PATH, {})
+    if args.test_email:
+        hostname = socket.gethostname()
+        subject = f"[TEST] {hostname} monitor email test"
+        body = (
+            f"This is an email-only test alert from {hostname} at {now_utc_iso()}.\n"
+            "If you received this, email configuration is correct."
+        )
+        try:
+            send_email(cfg, subject, body)
+        except Exception as exc:
+            print(f"[{now_utc_iso()}] test email failed: {exc}")
+            return 1
+        print(f"[{now_utc_iso()}] test email sent")
+        return 0
+
     if args.test_alert:
         hostname = socket.gethostname()
         subject = f"[TEST] {hostname} monitor alert channel test"

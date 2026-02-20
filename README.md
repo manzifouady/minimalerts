@@ -34,9 +34,8 @@ The installation script guides you through configuration and automatically sets 
 
 ```bash
 # Clone or download the repository
-cd /root
-git clone https://github.com/iamsoorena/minimalerts.git server-alerts
-cd server-alerts
+git clone https://github.com/iamsoorena/minimalerts.git
+cd minimalerts
 
 # Run the interactive installation (requires root/sudo)
 sudo ./install.sh
@@ -48,9 +47,9 @@ sudo ./install.sh
 3. 📱 **SMS Setup**: Optional IPPanel SMS configuration
 4. ⚙️ **Thresholds**: Customize monitoring thresholds or use defaults
 5. ✅ **Validation**: Tests configuration before proceeding
-6. 📧 **Email Test**: Sends test alert to verify email works
+6. 📧 **Mandatory Email Test**: Sends email-only test and requires confirmation
 7. 🔒 **Security**: Sets proper file permissions
-8. 🤖 **Systemd Setup**: Installs automatic 5-minute monitoring
+8. 🤖 **Systemd Setup**: Installs automatic 5-minute monitoring only after email is confirmed
 9. ✅ **Verification**: Ensures everything works before completion
 
 ### Gmail Setup Guide
@@ -85,8 +84,8 @@ cp config.sample.json config.json
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
-# Install systemd files
-sudo cp server-health-monitor.service /etc/systemd/system/
+# Install systemd files (replace default path with your current path)
+sudo sed "s#/opt/server-alerts#$(pwd -P)#g" server-health-monitor.service | sudo tee /etc/systemd/system/server-health-monitor.service >/dev/null
 sudo cp server-health-monitor.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now server-health-monitor.timer
@@ -131,10 +130,10 @@ After modifying `config.json` (thresholds, recipients, API keys, etc.), the chan
 ### Manual Testing (Immediate)
 ```bash
 # Test new configuration immediately
-/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --self-test
+.venv/bin/python monitor.py --self-test
 
 # Send test alert with new configuration
-/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --test-alert
+.venv/bin/python monitor.py --test-alert
 ```
 
 ### Systemd Service Management (if using systemd timers)
@@ -186,6 +185,9 @@ journalctl -u server-health-monitor.timer -f
 
 # Send test alert (email + SMS)
 .venv/bin/python monitor.py --test-alert
+
+# Send test email only
+.venv/bin/python monitor.py --test-email
 ```
 
 ### Configuration & Troubleshooting
