@@ -49,6 +49,9 @@ All of them are valid. Most are not a clean "under 60 seconds to useful server a
 - email/SMS alerts
 - done
 
+Now that we have AI agents, we can build what we actually need in hours, so I did.  
+Think you can improve this more? Please don't hesitate to open a PR - AI will review and merge it.
+
 ## Checks
 
 - High CPU busy %
