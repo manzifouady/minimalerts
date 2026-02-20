@@ -1,10 +1,29 @@
 # Server Alerts
 
+[![Docker Publish](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml)
+[![GHCR Image](https://img.shields.io/badge/ghcr.io-iamsoorena%2Fminimalerts-blue)](https://github.com/iamsoorena/minimalerts/pkgs/container/minimalerts)
+
 This folder contains an incident monitor that sends email and SMS alerts when the host is under stress.
 
 📖 **For detailed architecture and lifecycle information, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 **Note**: This project uses a virtual environment (`.venv`) for Python dependencies. All commands should use the virtual environment's Python interpreter.
+
+## TL;DR
+
+This project watches your Linux server so you can sleep like a deterministic state machine.
+
+- If the server is healthy: silence.
+- If the server is melting: email and optional SMS.
+- If it recovers: one recovery notice, no dramatic monologues.
+
+Run it fast on any server:
+
+```bash
+git clone https://github.com/iamsoorena/minimalerts.git && cd minimalerts && docker compose up --build
+```
+
+No config present? It will ask for Gmail credentials on first run and generate config automatically.
 
 ## Checks
 
