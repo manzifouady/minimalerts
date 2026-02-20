@@ -27,6 +27,73 @@ This folder contains an incident monitor that sends email and SMS alerts when th
 - `config.json`: channels, recipients, thresholds (local secret file)
 - `state.json`: internal monitor state (auto-created)
 - `requirements.txt`: Python dependency list
+- `Dockerfile`: container image definition
+- `docker-entrypoint.sh`: container startup/config wizard
+- `docker-compose.yml`: one-command Docker deployment
+
+## Docker (One-Command Deploy)
+
+You can run this project on any server with Docker in one command.
+
+### Option A: Interactive setup in one command (recommended first run)
+
+```bash
+docker compose up --build
+```
+
+If `/data/config.json` does not exist, the container will ask for:
+- Gmail address
+- Gmail App Password
+- Alert recipient emails
+- Optional SMS credentials
+
+After setup, it runs continuously and checks health every 5 minutes.
+
+### Option B: Run with a prebuilt image
+
+```bash
+docker run --name minimalerts -it \
+  -v minimalerts-data:/data \
+  -e MONITOR_INTERVAL_SEC=300 \
+  ghcr.io/iamsoorena/minimalerts:latest
+```
+
+### Option C: Non-interactive setup with environment variables
+
+```bash
+docker run -d --name minimalerts --restart unless-stopped \
+  -v minimalerts-data:/data \
+  -e SMTP_USER="your-email@gmail.com" \
+  -e SMTP_PASSWORD="your16charapppass" \
+  -e EMAIL_RECIPIENTS="ops1@example.com,ops2@example.com" \
+  -e SMS_ENABLED="false" \
+  ghcr.io/iamsoorena/minimalerts:latest
+```
+
+### Option D: Use your own config file as a volume
+
+```bash
+# first create local data folder and put your config there
+mkdir -p ./monitor-data
+cp config.sample.json ./monitor-data/config.json
+
+docker run -d --name minimalerts --restart unless-stopped \
+  -v $(pwd)/monitor-data:/data \
+  ghcr.io/iamsoorena/minimalerts:latest
+```
+
+### Docker Commands
+
+```bash
+# logs
+docker logs -f minimalerts
+
+# run one health check
+docker exec -it minimalerts python3 /app/monitor.py --run-once
+
+# test notifications
+docker exec -it minimalerts python3 /app/monitor.py --test-alert
+```
 
 ## Automatic Installation
 

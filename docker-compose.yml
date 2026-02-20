@@ -1,0 +1,21 @@
+services:
+  minimalerts:
+    build: .
+    container_name: minimalerts
+    restart: unless-stopped
+    volumes:
+      - minimalerts-data:/data
+    environment:
+      - MONITOR_INTERVAL_SEC=300
+      # Optional non-interactive setup values:
+      # - SMTP_USER=your-email@gmail.com
+      # - SMTP_PASSWORD=your-16-char-app-password
+      # - EMAIL_RECIPIENTS=ops1@example.com,ops2@example.com
+      # - SMS_ENABLED=false
+      # - SMS_API_KEY=
+      # - SMS_PATTERN_CODE=
+      # - SMS_SENDER_NUMBER=
+      # - SMS_RECIPIENTS=
+
+volumes:
+  minimalerts-data:

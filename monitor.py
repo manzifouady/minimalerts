@@ -19,8 +19,8 @@ except Exception:
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
-STATE_PATH = os.path.join(BASE_DIR, "state.json")
+CONFIG_PATH = os.environ.get("MONITOR_CONFIG_PATH", os.path.join(BASE_DIR, "config.json"))
+STATE_PATH = os.environ.get("MONITOR_STATE_PATH", os.path.join(BASE_DIR, "state.json"))
 
 
 def now_utc_iso():
