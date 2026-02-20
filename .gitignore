@@ -1,0 +1,15 @@
+# Secrets and local runtime state
+config.json
+state.json
+*.log
+
+# Python env/build artifacts
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS/editor noise
+.DS_Store
+*.swp

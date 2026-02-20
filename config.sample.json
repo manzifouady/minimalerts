@@ -1,0 +1,38 @@
+{
+  "cooldown_minutes": 20,
+  "consecutive_failures": 3,
+  "notify_recovery": true,
+  "email": {
+    "host_password": "your-app-password",
+    "host_user": "your-email@gmail.com",
+    "recipients": [
+      "ops1@example.com",
+      "ops2@example.com"
+    ],
+    "smtp_host": "smtp.gmail.com",
+    "smtp_port": 587
+  },
+  "services": [
+    "ssh",
+    "docker"
+  ],
+  "sms": {
+    "api_key": "your-sms-api-key",
+    "pattern_code": "your-pattern-code",
+    "recipients": [
+      "+989000000000"
+    ],
+    "sender_number": "+983000505"
+  },
+  "thresholds": {
+    "cpu_busy_percent": 90,
+    "disk_used_percent": 90,
+    "inode_used_percent": 90,
+    "iowait_percent": 20,
+    "load1_per_cpu": 1.8,
+    "mem_available_mb": 2048,
+    "mem_used_percent": 88,
+    "steal_percent": 10,
+    "swap_out_per_sec": 30
+  }
+}
