@@ -25,6 +25,30 @@ git clone https://github.com/iamsoorena/minimalerts.git && cd minimalerts && doc
 
 No config present? It will ask for Gmail credentials on first run and generate config automatically.
 
+## Why this exists (when Prometheus/Grafana already exist)
+
+Because sometimes you need alerts in minutes, not a monitoring platform in phases.
+
+Prometheus + Alertmanager + Grafana is excellent, but usually means:
+- multiple components to deploy and connect
+- rules, dashboards, retention, and routing to configure
+- more moving parts than "I just need alerts on this one server"
+
+Other good tools:
+- Netdata
+- Zabbix
+- Nagios
+- Uptime Kuma
+- Datadog / New Relic
+
+All of them are valid. Most are not a clean "under 60 seconds to useful server alerts" path for a fresh box.
+
+`minimalerts` is the boring fast path:
+- one command
+- interactive first-run config (or mounted config)
+- email/SMS alerts
+- done
+
 ## Checks
 
 - High CPU busy %
