@@ -30,7 +30,7 @@ This folder contains an incident monitor that sends email and SMS alerts when th
 
 ## Automatic Installation
 
-The installation script automatically sets up everything including systemd services and scheduling:
+The installation script guides you through configuration and automatically sets up everything:
 
 ```bash
 # Clone or download the repository
@@ -38,18 +38,39 @@ cd /root
 git clone https://github.com/iamsoorena/minimalerts.git server-alerts
 cd server-alerts
 
-# Run the automatic installation (requires root/sudo)
+# Run the interactive installation (requires root/sudo)
 sudo ./install.sh
 ```
 
 **What the installation script does:**
-1. ✅ Creates `config.json` from template
-2. ✅ Sets up Python virtual environment (`.venv`)
-3. ✅ Installs all dependencies
-4. ✅ Configures proper file permissions
-5. ✅ Installs systemd service and timer
-6. ✅ Enables automatic monitoring (runs every 5 minutes)
-7. ✅ Tests the installation
+1. 🔧 **Interactive Configuration**: Guides you through email (required) and SMS setup
+2. 📧 **Email Setup**: Helps configure Gmail with step-by-step instructions
+3. 📱 **SMS Setup**: Optional IPPanel SMS configuration
+4. ⚙️ **Thresholds**: Customize monitoring thresholds or use defaults
+5. ✅ **Validation**: Tests configuration before proceeding
+6. 📧 **Email Test**: Sends test alert to verify email works
+7. 🔒 **Security**: Sets proper file permissions
+8. 🤖 **Systemd Setup**: Installs automatic 5-minute monitoring
+9. ✅ **Verification**: Ensures everything works before completion
+
+### Gmail Setup Guide
+Before running the installation, prepare your Gmail credentials:
+
+1. **Enable 2-Factor Authentication** on your Gmail account
+2. **Generate App Password**:
+   - Go to https://myaccount.google.com/security
+   - Click "2-Step Verification" → "App passwords"
+   - Select "Mail" and "Other (custom name)"
+   - Enter "Server Monitor" as the name
+   - Copy the 16-character password (ignore spaces)
+3. **Installation will prompt** for your Gmail address and app password
+
+### SMS Setup (Optional)
+For SMS alerts via IPPanel:
+- Sign up at https://ippanel.com
+- Get your API Key from dashboard
+- Create a SMS pattern for alerts
+- Have your sender number ready
 
 ### Manual Installation (Alternative)
 
