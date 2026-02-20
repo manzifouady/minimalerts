@@ -42,6 +42,39 @@ systemctl enable --now server-health-monitor.timer
 
 `config.json`, `state.json`, and `.venv` are ignored by git to avoid leaking secrets.
 
+## Restarting Services After Configuration Changes
+
+After modifying `config.json` (thresholds, recipients, API keys, etc.), the changes take effect immediately for manual runs. However, for automated monitoring:
+
+### Manual Testing (Immediate)
+```bash
+# Test new configuration immediately
+/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --self-test
+
+# Send test alert with new configuration
+/root/server-alerts/.venv/bin/python /root/server-alerts/monitor.py --test-alert
+```
+
+### Systemd Service Management (if using systemd timers)
+```bash
+# Check service status
+systemctl status server-health-monitor.service
+systemctl status server-health-monitor.timer
+
+# View recent logs
+journalctl -u server-health-monitor.service -n 20 --no-pager
+journalctl -u server-health-monitor.timer -n 10 --no-pager
+
+# Restart timer (next run will use new config)
+systemctl restart server-health-monitor.timer
+
+# Force immediate check (bypasses timer)
+systemctl start server-health-monitor.service
+```
+
+### Cron Job Alternative (if not using systemd)
+If you're using cron instead of systemd timers, no restart is needed - the next scheduled run will automatically use the updated configuration.
+
 ## Useful Commands
 
 ```bash
