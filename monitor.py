@@ -115,13 +115,17 @@ def read_root_inode_used_pct():
 
 def service_active(service):
     unit = service if service.endswith(".service") else f"{service}.service"
-    p = subprocess.run(
-        ["systemctl", "is-active", unit],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        check=False,
-    )
+    try:
+        p = subprocess.run(
+            ["systemctl", "is-active", unit],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        # systemctl is unavailable in some environments (e.g. containers)
+        return None
     return p.stdout.strip() == "active"
 
 
@@ -252,7 +256,7 @@ def evaluate(cfg, state, metrics):
         )
 
     for svc, is_active in metrics.get("service_active", {}).items():
-        if not is_active:
+        if is_active is False:
             reasons.append(f"service down ({svc})")
 
     return reasons
