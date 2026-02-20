@@ -17,6 +17,7 @@
     "docker"
   ],
   "sms": {
+    "enabled": false,
     "api_key": "your-sms-api-key",
     "pattern_code": "your-pattern-code",
     "recipients": [

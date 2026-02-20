@@ -194,10 +194,12 @@ def send_notifications(cfg, subject, body, sms_code):
     except Exception as exc:
         errors.append(f"email failed: {exc}")
 
-    try:
-        send_sms(cfg, sms_code)
-    except Exception as exc:
-        errors.append(f"sms failed: {exc}")
+    # Check if SMS is enabled before attempting to send
+    if cfg.get("sms", {}).get("enabled", False):
+        try:
+            send_sms(cfg, sms_code)
+        except Exception as exc:
+            errors.append(f"sms failed: {exc}")
 
     return errors
 
@@ -459,10 +461,13 @@ def main():
             send_email(cfg, subject, body)
         except Exception as exc:
             errors.append(f"email failed: {exc}")
-        try:
-            send_sms(cfg, int(time.time()) % 1000000)
-        except Exception as exc:
-            errors.append(f"sms failed: {exc}")
+
+        # Check if SMS is enabled before attempting to send test SMS
+        if cfg.get("sms", {}).get("enabled", False):
+            try:
+                send_sms(cfg, int(time.time()) % 1000000)
+            except Exception as exc:
+                errors.append(f"sms failed: {exc}")
         if errors:
             print(f"[{now_utc_iso()}] test alert partial/failed: {'; '.join(errors)}")
             return 1
