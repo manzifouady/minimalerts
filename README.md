@@ -62,12 +62,12 @@ journalctl -u server-health-monitor.timer -n 50 --no-pager
 ## Default Thresholds (Current)
 
 - `cpu_busy_percent`: `90`
-- `iowait_percent`: `20`
+- `iowait_percent`: `40`
 - `steal_percent`: `10`
 - `swap_out_per_sec`: `30`
 - `mem_available_mb`: `2048`
 - `mem_used_percent`: `88`
-- `load1_per_cpu`: `1.8`
+- `load1_per_cpu`: `3.0`
 - `disk_used_percent`: `90`
 - `inode_used_percent`: `90`
 - `consecutive_failures`: `3`
