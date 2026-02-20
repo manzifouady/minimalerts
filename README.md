@@ -58,6 +58,8 @@ docker run --name minimalerts -it \
   ghcr.io/iamsoorena/minimalerts:latest
 ```
 
+The `latest` image is automatically published from `main` via GitHub Actions.
+
 ### Option C: Non-interactive setup with environment variables
 
 ```bash
