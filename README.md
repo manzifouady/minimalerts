@@ -2,6 +2,8 @@
 
 This folder contains an incident monitor that sends email and SMS alerts when the host is under stress.
 
+**Note**: This project uses a virtual environment (`.venv`) for Python dependencies. All commands should use the virtual environment's Python interpreter.
+
 ## Checks
 
 - High CPU busy %
