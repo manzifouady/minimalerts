@@ -153,6 +153,28 @@ docker exec -it minimalerts python3 /app/monitor.py --run-once
 docker exec -it minimalerts python3 /app/monitor.py --test-alert
 ```
 
+### Send Test Notifications (Docker)
+
+If the container is already running:
+
+```bash
+# email-only test
+docker compose exec minimalerts python3 /app/monitor.py --test-email
+
+# email + SMS test (SMS only if enabled in config)
+docker compose exec minimalerts python3 /app/monitor.py --test-alert
+```
+
+If you prefer one-off commands without entering the running container:
+
+```bash
+# email-only test
+docker compose run --rm minimalerts test-email
+
+# email + SMS test
+docker compose run --rm minimalerts test-alert
+```
+
 ## Automatic Installation
 
 The installation script guides you through configuration and automatically sets up everything:
