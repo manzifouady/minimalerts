@@ -27,11 +27,13 @@ sender = os.environ.get("SMTP_USER", "").strip()
 password = os.environ.get("SMTP_PASSWORD", "").strip()
 recipients_raw = os.environ.get("EMAIL_RECIPIENTS", "").strip()
 recipients = [x.strip() for x in recipients_raw.split(",") if x.strip()]
+server_name = os.environ.get("SERVER_NAME", "").strip()
 
 if not sender or not password or not recipients:
     raise SystemExit("Missing SMTP_USER/SMTP_PASSWORD/EMAIL_RECIPIENTS")
 
 cfg.setdefault("email", {})
+cfg["server_name"] = server_name
 cfg["email"]["host_user"] = sender
 cfg["email"]["host_password"] = password
 cfg["email"]["recipients"] = recipients
@@ -67,7 +69,8 @@ interactive_config_wizard() {
   echo "3) App passwords -> create Mail app password"
   echo ""
 
-  local smtp_user smtp_password recipients setup_sms sms_api_key sms_pattern sms_sender sms_recipients
+  local server_name smtp_user smtp_password recipients setup_sms sms_api_key sms_pattern sms_sender sms_recipients
+  read -r -p "Optional server name for alerts (leave empty for ipinfo.io fallback): " server_name
   read -r -p "Gmail address: " smtp_user
   while [[ -z "$smtp_user" || "$smtp_user" != *"@"* ]]; do
     read -r -p "Enter a valid Gmail address: " smtp_user
@@ -90,6 +93,7 @@ interactive_config_wizard() {
   export SMTP_USER="$smtp_user"
   export SMTP_PASSWORD="$smtp_password"
   export EMAIL_RECIPIENTS="$recipients"
+  export SERVER_NAME="$server_name"
 
   read -r -p "Enable SMS now? (y/n): " setup_sms
   if [[ "$setup_sms" =~ ^[Yy]$ ]]; then

@@ -88,6 +88,7 @@ docker compose up --build
 ```
 
 If `/data/config.json` does not exist, the container will ask for:
+- Optional server name label (for alert subjects/messages)
 - Gmail address
 - Gmail App Password
 - Alert recipient emails
@@ -111,6 +112,7 @@ The `latest` image is automatically published from `main` via GitHub Actions.
 ```bash
 docker run -d --name minimalerts --restart unless-stopped \
   -v minimalerts-data:/data \
+  -e SERVER_NAME="prod-api-1" \
   -e SMTP_USER="your-email@gmail.com" \
   -e SMTP_PASSWORD="your16charapppass" \
   -e EMAIL_RECIPIENTS="ops1@example.com,ops2@example.com" \
@@ -124,6 +126,7 @@ docker run -d --name minimalerts --restart unless-stopped \
 # first create local data folder and put your config there
 mkdir -p ./monitor-data
 cp config.sample.json ./monitor-data/config.json
+# optional: set "server_name" in ./monitor-data/config.json
 
 docker run -d --name minimalerts --restart unless-stopped \
   -v $(pwd)/monitor-data:/data \
@@ -157,7 +160,7 @@ sudo ./install.sh
 ```
 
 **What the installation script does:**
-1. 🔧 **Interactive Configuration**: Guides you through email (required) and SMS setup
+1. 🔧 **Interactive Configuration**: Guides you through server name, email (required), and SMS setup
 2. 📧 **Email Setup**: Helps configure Gmail with step-by-step instructions
 3. 📱 **SMS Setup**: Optional IPPanel SMS configuration
 4. ⚙️ **Thresholds**: Customize monitoring thresholds or use defaults
@@ -207,6 +210,12 @@ sudo systemctl enable --now server-health-monitor.timer
 ```
 
 `config.json`, `state.json`, and `.venv` are ignored by git to avoid leaking secrets.
+
+### Server Name Behavior
+
+- Set `server_name` in `config.json` to control how the host appears in alert messages.
+- For Docker env-based setup, use `SERVER_NAME`.
+- If `server_name` is empty or missing, alerts automatically include host identity from `ipinfo.io` (same idea as `curl ipinfo.io`) plus hostname.
 
 ## Automatic Scheduling
 

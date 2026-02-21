@@ -8,6 +8,7 @@ services:
     environment:
       - MONITOR_INTERVAL_SEC=300
       # Optional non-interactive setup values:
+      # - SERVER_NAME=prod-api-1
       # - SMTP_USER=your-email@gmail.com
       # - SMTP_PASSWORD=your-16-char-app-password
       # - EMAIL_RECIPIENTS=ops1@example.com,ops2@example.com

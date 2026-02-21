@@ -51,6 +51,9 @@ else
 fi
 
 echo ""
+read -r -p "Optional server name for alerts (leave empty to auto-use ipinfo.io): " server_name
+
+echo ""
 echo "EMAIL CONFIGURATION (REQUIRED)"
 echo "=============================="
 echo "Use a Gmail account with an App Password."
@@ -79,7 +82,7 @@ while [[ -z "$recipients_input" ]]; do
     read -r -p "At least one recipient is required: " recipients_input
 done
 
-export CONFIG_PATH user_email app_password recipients_input
+export CONFIG_PATH user_email app_password recipients_input server_name
 python3 - <<'PY'
 import json
 import os
@@ -93,6 +96,7 @@ if not recipients:
     raise SystemExit("no valid recipients provided")
 
 cfg.setdefault("email", {})
+cfg["server_name"] = os.environ.get("server_name", "").strip()
 cfg["email"]["host_user"] = os.environ["user_email"].strip()
 cfg["email"]["host_password"] = os.environ["app_password"].strip()
 cfg["email"]["recipients"] = recipients

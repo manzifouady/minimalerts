@@ -9,6 +9,8 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from email.message import EmailMessage
 
@@ -127,6 +129,35 @@ def service_active(service):
         # systemctl is unavailable in some environments (e.g. containers)
         return None
     return p.stdout.strip() == "active"
+
+
+def fetch_ipinfo_summary():
+    try:
+        req = urllib.request.Request(
+            "https://ipinfo.io/json",
+            headers={"User-Agent": "minimalerts/1.0"},
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.load(resp)
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError):
+        return None
+
+    fields = ["ip", "city", "region", "country", "org"]
+    parts = [f"{key}={data.get(key)}" for key in fields if data.get(key)]
+    if not parts:
+        return None
+    return " | ".join(parts)
+
+
+def resolve_server_label(cfg):
+    configured = cfg.get("server_name")
+    if isinstance(configured, str) and configured.strip():
+        return configured.strip()
+
+    ipinfo = fetch_ipinfo_summary()
+    if ipinfo:
+        return f"{socket.gethostname()} ({ipinfo})"
+    return socket.gethostname()
 
 
 def send_email(cfg, subject, body):
@@ -405,10 +436,10 @@ def run_once():
         and (now_ts - float(state.get("last_alert_ts", 0))) >= cooldown
     )
 
-    hostname = socket.gethostname()
+    server_label = resolve_server_label(cfg)
     if should_alert:
-        subject = f"[ALERT] {hostname} health issue detected"
-        body = build_alert(hostname, reasons, metrics)
+        subject = f"[ALERT] {server_label} health issue detected"
+        body = build_alert(server_label, reasons, metrics)
         delivery_errors = send_notifications(cfg, subject, body, int(now_ts) % 1000000)
 
         if delivery_errors:
@@ -424,8 +455,8 @@ def run_once():
             )
         else:
             if state.get("incident_open") and bool(cfg.get("notify_recovery", True)):
-                recovery_subject = f"[RECOVERY] {hostname} health recovered"
-                recovery_body = build_recovery_message(hostname, metrics)
+                recovery_subject = f"[RECOVERY] {server_label} health recovered"
+                recovery_body = build_recovery_message(server_label, metrics)
                 recovery_errors = send_notifications(
                     cfg, recovery_subject, recovery_body, int(now_ts) % 1000000
                 )
@@ -455,10 +486,10 @@ def main():
 
     cfg = load_json(CONFIG_PATH, {})
     if args.test_email:
-        hostname = socket.gethostname()
-        subject = f"[TEST] {hostname} monitor email test"
+        server_label = resolve_server_label(cfg)
+        subject = f"[TEST] {server_label} monitor email test"
         body = (
-            f"This is an email-only test alert from {hostname} at {now_utc_iso()}.\n"
+            f"This is an email-only test alert from {server_label} at {now_utc_iso()}.\n"
             "If you received this, email configuration is correct."
         )
         try:
@@ -470,10 +501,10 @@ def main():
         return 0
 
     if args.test_alert:
-        hostname = socket.gethostname()
-        subject = f"[TEST] {hostname} monitor alert channel test"
+        server_label = resolve_server_label(cfg)
+        subject = f"[TEST] {server_label} monitor alert channel test"
         body = (
-            f"This is a test alert from {hostname} at {now_utc_iso()}.\n"
+            f"This is a test alert from {server_label} at {now_utc_iso()}.\n"
             "If you received this, email channel is configured correctly."
         )
         errors = []
@@ -512,6 +543,7 @@ def main():
         print(
             json.dumps(
                 {
+                    "server_label": resolve_server_label(cfg),
                     "time_utc": now_utc_iso(),
                     "metrics": metrics,
                     "reasons": reasons,
