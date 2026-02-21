@@ -1,4 +1,4 @@
-# Server Alerts
+# Minimal Server Alerts - minimalerts
 
 [![Docker Publish](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml)
 [![GHCR Image](https://img.shields.io/badge/ghcr.io-iamsoorena%2Fminimalerts-blue)](https://github.com/iamsoorena/minimalerts/pkgs/container/minimalerts)
