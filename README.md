@@ -213,12 +213,14 @@ docker exec -it minimalerts sh
 
 # edit config
 vi /data/config.json
+# or
+nano /data/config.json
 
 # exit shell, then restart container to apply immediately
 docker restart minimalerts
 ```
 
-If your image does not include `vi`, you can copy-edit-copy back:
+If you still prefer local editing, use copy-edit-copy:
 
 ```bash
 docker cp minimalerts:/data/config.json ./config.json
