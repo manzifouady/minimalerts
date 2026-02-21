@@ -203,6 +203,37 @@ Look for:
 - `monitor_paths.root_path` set to `/hostfs`
 - no warning about container filesystem or PID namespace
 
+### Change Config When Using Docker
+
+If you run with a named volume (example: `-v minimalerts-data:/data`), `config.json` lives at `/data/config.json` inside that volume.
+
+```bash
+# open shell in running container
+docker exec -it minimalerts sh
+
+# edit config
+vi /data/config.json
+
+# exit shell, then restart container to apply immediately
+docker restart minimalerts
+```
+
+If your image does not include `vi`, you can copy-edit-copy back:
+
+```bash
+docker cp minimalerts:/data/config.json ./config.json
+# edit locally with your editor
+docker cp ./config.json minimalerts:/data/config.json
+docker restart minimalerts
+```
+
+If you use a bind mount (example: `-v $(pwd)/monitor-data:/data`), edit directly on host:
+
+```bash
+nano ./monitor-data/config.json
+docker restart minimalerts
+```
+
 ## Updating to Latest Version
 
 ### If you run from this repository (recommended)
