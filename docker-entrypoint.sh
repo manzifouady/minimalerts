@@ -148,6 +148,10 @@ if [[ "${1:-}" == "self-test" ]]; then
   exec python3 "$APP_DIR/monitor.py" --self-test
 fi
 
+if [[ "${1:-}" == "verify-host" ]]; then
+  exec python3 "$APP_DIR/monitor.py" --verify-host
+fi
+
 if [[ "${1:-}" == "test-alert" ]]; then
   exec python3 "$APP_DIR/monitor.py" --test-alert
 fi

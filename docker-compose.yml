@@ -1,14 +1,19 @@
 services:
   minimalerts:
+    image: ghcr.io/iamsoorena/minimalerts:latest
     build: .
     container_name: minimalerts
     restart: unless-stopped
     stdin_open: true
     tty: true
+    pid: host
     volumes:
       - minimalerts-data:/data
+      - /:/hostfs:ro
     environment:
       - MONITOR_INTERVAL_SEC=300
+      - MONITOR_PROC_PATH=/proc
+      - MONITOR_ROOT_PATH=/hostfs
       # Optional non-interactive setup values:
       # - SERVER_NAME=prod-api-1
       # - SMTP_USER=your-email@gmail.com

@@ -23,6 +23,8 @@ except Exception:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.environ.get("MONITOR_CONFIG_PATH", os.path.join(BASE_DIR, "config.json"))
 STATE_PATH = os.environ.get("MONITOR_STATE_PATH", os.path.join(BASE_DIR, "state.json"))
+PROC_PATH = os.environ.get("MONITOR_PROC_PATH", "/proc")
+ROOT_PATH = os.environ.get("MONITOR_ROOT_PATH", "/")
 
 
 def now_utc_iso():
@@ -48,7 +50,7 @@ def save_json(path, data):
 
 
 def read_proc_stat_cpu():
-    with open("/proc/stat", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROC_PATH, "stat"), "r", encoding="utf-8") as f:
         first = f.readline().strip()
     parts = first.split()
     if not parts or parts[0] != "cpu":
@@ -70,7 +72,7 @@ def read_proc_stat_cpu():
 
 
 def read_mem_available_mb():
-    with open("/proc/meminfo", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROC_PATH, "meminfo"), "r", encoding="utf-8") as f:
         txt = f.read()
     m = re.search(r"^MemAvailable:\s+(\d+)\s+kB$", txt, re.MULTILINE)
     if not m:
@@ -79,7 +81,7 @@ def read_mem_available_mb():
 
 
 def read_mem_total_mb():
-    with open("/proc/meminfo", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROC_PATH, "meminfo"), "r", encoding="utf-8") as f:
         txt = f.read()
     m = re.search(r"^MemTotal:\s+(\d+)\s+kB$", txt, re.MULTILINE)
     if not m:
@@ -88,12 +90,12 @@ def read_mem_total_mb():
 
 
 def read_load1():
-    with open("/proc/loadavg", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROC_PATH, "loadavg"), "r", encoding="utf-8") as f:
         return float(f.read().split()[0])
 
 
 def read_pswpout():
-    with open("/proc/vmstat", "r", encoding="utf-8") as f:
+    with open(os.path.join(PROC_PATH, "vmstat"), "r", encoding="utf-8") as f:
         for line in f:
             if line.startswith("pswpout "):
                 return int(line.split()[1])
@@ -101,14 +103,14 @@ def read_pswpout():
 
 
 def read_root_disk_used_pct():
-    total, used, _free = shutil.disk_usage("/")
+    total, used, _free = shutil.disk_usage(ROOT_PATH)
     if total <= 0:
         return None
     return (used * 100.0) / total
 
 
 def read_root_inode_used_pct():
-    s = os.statvfs("/")
+    s = os.statvfs(ROOT_PATH)
     if s.f_files <= 0:
         return None
     used = s.f_files - s.f_ffree
@@ -158,6 +160,14 @@ def resolve_server_label(cfg):
     if ipinfo:
         return f"{socket.gethostname()} ({ipinfo})"
     return socket.gethostname()
+
+
+def read_pid1_comm():
+    try:
+        with open(os.path.join(PROC_PATH, "1", "comm"), "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception:
+        return None
 
 
 def send_email(cfg, subject, body):
@@ -482,6 +492,7 @@ def main():
     parser.add_argument("--test-alert", action="store_true", help="send a test alert immediately")
     parser.add_argument("--test-email", action="store_true", help="send a test email only")
     parser.add_argument("--self-test", action="store_true", help="collect metrics and print evaluation without sending notifications")
+    parser.add_argument("--verify-host", action="store_true", help="print host-view diagnostics for Docker/namespace setup")
     args = parser.parse_args()
 
     cfg = load_json(CONFIG_PATH, {})
@@ -547,6 +558,49 @@ def main():
                     "time_utc": now_utc_iso(),
                     "metrics": metrics,
                     "reasons": reasons,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0
+
+    if args.verify_host:
+        state = load_json(
+            STATE_PATH,
+            {
+                "last_cpu": None,
+                "last_pswpout": None,
+                "last_ts": None,
+                "breach_streak": 0,
+                "last_alert_ts": 0,
+                "incident_open": False,
+            },
+        )
+        now_ts = time.time()
+        _cpu, _pswpout, metrics = collect_metrics(cfg, state, now_ts)
+        in_container = os.path.exists("/.dockerenv")
+        pid1_comm = read_pid1_comm()
+        warnings = []
+        if in_container and ROOT_PATH == "/":
+            warnings.append("ROOT_PATH is '/': disk/inode metrics likely reflect container filesystem, not host.")
+        if in_container and pid1_comm and pid1_comm not in ("systemd", "init"):
+            warnings.append(
+                f"PID namespace may not be host (pid1='{pid1_comm}'). CPU/RAM/load might be container-scoped."
+            )
+        print(
+            json.dumps(
+                {
+                    "time_utc": now_utc_iso(),
+                    "server_label": resolve_server_label(cfg),
+                    "in_container": in_container,
+                    "monitor_paths": {
+                        "proc_path": PROC_PATH,
+                        "root_path": ROOT_PATH,
+                    },
+                    "pid1_comm": pid1_comm,
+                    "metrics": metrics,
+                    "warnings": warnings,
                 },
                 indent=2,
                 sort_keys=True,

@@ -107,7 +107,11 @@ docker compose up -d
 
 ```bash
 docker run --name minimalerts -it \
+  --pid=host \
   -v minimalerts-data:/data \
+  -v /:/hostfs:ro \
+  -e MONITOR_PROC_PATH=/proc \
+  -e MONITOR_ROOT_PATH=/hostfs \
   -e MONITOR_INTERVAL_SEC=300 \
   ghcr.io/iamsoorena/minimalerts:latest
 ```
@@ -118,7 +122,11 @@ The `latest` image is automatically published from `main` via GitHub Actions.
 
 ```bash
 docker run -d --name minimalerts --restart unless-stopped \
+  --pid=host \
   -v minimalerts-data:/data \
+  -v /:/hostfs:ro \
+  -e MONITOR_PROC_PATH=/proc \
+  -e MONITOR_ROOT_PATH=/hostfs \
   -e SERVER_NAME="prod-api-1" \
   -e SMTP_USER="your-email@gmail.com" \
   -e SMTP_PASSWORD="your16charapppass" \
@@ -136,7 +144,11 @@ cp config.sample.json ./monitor-data/config.json
 # optional: set "server_name" in ./monitor-data/config.json
 
 docker run -d --name minimalerts --restart unless-stopped \
+  --pid=host \
   -v $(pwd)/monitor-data:/data \
+  -v /:/hostfs:ro \
+  -e MONITOR_PROC_PATH=/proc \
+  -e MONITOR_ROOT_PATH=/hostfs \
   ghcr.io/iamsoorena/minimalerts:latest
 ```
 
@@ -148,6 +160,9 @@ docker logs -f minimalerts
 
 # run one health check
 docker exec -it minimalerts python3 /app/monitor.py --run-once
+
+# verify Docker sees host-level metrics (CPU/RAM/disk)
+docker exec -it minimalerts python3 /app/monitor.py --verify-host
 
 # test notifications
 docker exec -it minimalerts python3 /app/monitor.py --test-alert
@@ -173,6 +188,43 @@ docker compose run --rm minimalerts test-email
 
 # email + SMS test
 docker compose run --rm minimalerts test-alert
+```
+
+### Verify Host Metrics in Docker
+
+Use this command to verify the container is reading full host metrics (not just container scope):
+
+```bash
+docker compose exec minimalerts python3 /app/monitor.py --verify-host
+```
+
+Look for:
+- `warnings: []` (empty is good)
+- `monitor_paths.root_path` set to `/hostfs`
+- no warning about container filesystem or PID namespace
+
+## Updating to Latest Version
+
+### If you run from this repository (recommended)
+
+```bash
+git pull
+docker compose pull
+docker compose up -d --build
+```
+
+### If you run image-only deployment
+
+```bash
+docker pull ghcr.io/iamsoorena/minimalerts:latest
+docker rm -f minimalerts
+docker run -d --name minimalerts --restart unless-stopped \
+  --pid=host \
+  -v minimalerts-data:/data \
+  -v /:/hostfs:ro \
+  -e MONITOR_PROC_PATH=/proc \
+  -e MONITOR_ROOT_PATH=/hostfs \
+  ghcr.io/iamsoorena/minimalerts:latest
 ```
 
 ## Automatic Installation
