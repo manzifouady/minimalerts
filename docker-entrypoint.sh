@@ -125,6 +125,10 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     echo "Config not found at $CONFIG_PATH."
     echo "Either mount a config volume or provide SMTP_USER, SMTP_PASSWORD, EMAIL_RECIPIENTS."
+    echo "For Docker Compose first-run setup, use:"
+    echo "  docker compose run --rm minimalerts setup"
+    echo "Then start normally:"
+    echo "  docker compose up -d"
     exit 1
   fi
 fi

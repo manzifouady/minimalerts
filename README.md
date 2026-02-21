@@ -96,6 +96,13 @@ If `/data/config.json` does not exist, the container will ask for:
 
 After setup, it runs continuously and checks health every 5 minutes.
 
+If your environment still starts non-interactive and cannot prompt, run:
+
+```bash
+docker compose run --rm minimalerts setup
+docker compose up -d
+```
+
 ### Option B: Run with a prebuilt image
 
 ```bash

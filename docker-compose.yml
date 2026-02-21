@@ -3,6 +3,8 @@ services:
     build: .
     container_name: minimalerts
     restart: unless-stopped
+    stdin_open: true
+    tty: true
     volumes:
       - minimalerts-data:/data
     environment:
