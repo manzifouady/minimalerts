@@ -449,7 +449,6 @@ journalctl -u server-health-monitor.service -n 20 --no-pager
 - `iowait_percent`: `40`
 - `steal_percent`: `10`
 - `swap_out_per_sec`: `30`
-- `mem_available_mb`: `2048`
 - `mem_used_percent`: `88`
 - `load1_per_cpu`: `3.0`
 - `disk_used_percent`: `90`

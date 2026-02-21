@@ -256,7 +256,6 @@ def evaluate(cfg, state, metrics):
     iowait_limit = float(t.get("iowait_percent", 20))
     steal_limit = float(t.get("steal_percent", 10))
     swapout_limit = float(t.get("swap_out_per_sec", 40))
-    memavail_limit = float(t.get("mem_available_mb", 1200))
     mem_used_pct_limit = float(t.get("mem_used_percent", 85))
     cpu_busy_limit = float(t.get("cpu_busy_percent", 90))
     load_limit = float(t.get("load1_per_cpu", 2.0))
@@ -270,10 +269,6 @@ def evaluate(cfg, state, metrics):
     if metrics.get("swap_out_per_sec") is not None and metrics["swap_out_per_sec"] >= swapout_limit:
         reasons.append(
             f"swap out high ({metrics['swap_out_per_sec']:.2f}/s >= {swapout_limit}/s)"
-        )
-    if metrics.get("mem_available_mb") is not None and metrics["mem_available_mb"] <= memavail_limit:
-        reasons.append(
-            f"MemAvailable low ({metrics['mem_available_mb']}MB <= {memavail_limit}MB)"
         )
     if metrics.get("mem_used_pct") is not None and metrics["mem_used_pct"] >= mem_used_pct_limit:
         reasons.append(

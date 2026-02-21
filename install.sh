@@ -162,10 +162,10 @@ echo ""
 read -r -p "Use default thresholds from config.sample.json? (y/n): " use_defaults
 if [[ ! "$use_defaults" =~ ^[Yy]$ ]]; then
     read -r -p "cpu_busy_percent (default 90): " cpu_threshold
-    read -r -p "mem_available_mb (default 2048): " mem_threshold
+    read -r -p "mem_used_percent (default 88): " mem_threshold
     read -r -p "disk_used_percent (default 90): " disk_threshold
     cpu_threshold="${cpu_threshold:-90}"
-    mem_threshold="${mem_threshold:-2048}"
+    mem_threshold="${mem_threshold:-88}"
     disk_threshold="${disk_threshold:-90}"
     export cpu_threshold mem_threshold disk_threshold
     python3 - <<'PY'
@@ -178,7 +178,7 @@ with open(path, "r", encoding="utf-8") as f:
 
 cfg.setdefault("thresholds", {})
 cfg["thresholds"]["cpu_busy_percent"] = int(os.environ["cpu_threshold"])
-cfg["thresholds"]["mem_available_mb"] = int(os.environ["mem_threshold"])
+cfg["thresholds"]["mem_used_percent"] = int(os.environ["mem_threshold"])
 cfg["thresholds"]["disk_used_percent"] = int(os.environ["disk_threshold"])
 
 with open(path, "w", encoding="utf-8") as f:

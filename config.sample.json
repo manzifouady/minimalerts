@@ -32,7 +32,6 @@
     "inode_used_percent": 90,
     "iowait_percent": 40,
     "load1_per_cpu": 3.0,
-    "mem_available_mb": 2048,
     "mem_used_percent": 88,
     "steal_percent": 10,
     "swap_out_per_sec": 30
