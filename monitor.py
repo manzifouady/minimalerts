@@ -6,6 +6,7 @@ import re
 import shutil
 import smtplib
 import socket
+import statistics
 import subprocess
 import sys
 import time
@@ -25,6 +26,7 @@ CONFIG_PATH = os.environ.get("MONITOR_CONFIG_PATH", os.path.join(BASE_DIR, "conf
 STATE_PATH = os.environ.get("MONITOR_STATE_PATH", os.path.join(BASE_DIR, "state.json"))
 PROC_PATH = os.environ.get("MONITOR_PROC_PATH", "/proc")
 ROOT_PATH = os.environ.get("MONITOR_ROOT_PATH", "/")
+SAMPLE_WINDOW_SEC = max(0, float(os.environ.get("MONITOR_SAMPLE_WINDOW_SEC", "5")))
 
 
 def now_utc_iso():
@@ -345,11 +347,67 @@ def build_recovery_message(hostname, metrics):
     )
 
 
-def collect_metrics(cfg, state, now_ts):
-    cpu = read_proc_stat_cpu()
-    pswpout = read_pswpout()
-    mem_avail = read_mem_available_mb()
+def collect_metrics(cfg):
+    """Collect metrics over a sampling window to smooth out transient spikes.
+
+    CPU, IOWait, Steal, and Swap are computed as deltas across the window.
+    Memory is sampled at the start, middle, and end; the median is used.
+    Load (already kernel-averaged), disk, and inode are read once.
+    """
+    window = SAMPLE_WINDOW_SEC
+    half = window / 2.0
+
+    # --- t=0: start of sampling window ---
+    cpu_start = read_proc_stat_cpu()
+    pswpout_start = read_pswpout()
+    mem_samples = [read_mem_available_mb()]
+
+    if half > 0:
+        time.sleep(half)
+
+    # --- t=window/2: midpoint sample ---
+    mem_samples.append(read_mem_available_mb())
+
+    if half > 0:
+        time.sleep(half)
+
+    # --- t=window: end of sampling window ---
+    cpu_end = read_proc_stat_cpu()
+    pswpout_end = read_pswpout()
+    mem_samples.append(read_mem_available_mb())
+
+    # CPU metrics: delta over the sampling window
+    iowait_pct = None
+    steal_pct = None
+    cpu_busy_pct = None
+
+    total_start = sum(cpu_start.values())
+    total_end = sum(cpu_end.values())
+    delta_total = total_end - total_start
+    if delta_total > 0:
+        iowait_pct = (cpu_end["iowait"] - cpu_start["iowait"]) * 100.0 / delta_total
+        steal_pct = (cpu_end["steal"] - cpu_start["steal"]) * 100.0 / delta_total
+        delta_idle = (cpu_end["idle"] - cpu_start["idle"]) + (cpu_end["iowait"] - cpu_start["iowait"])
+        cpu_busy_pct = ((delta_total - delta_idle) * 100.0) / delta_total
+
+    # Swap rate over the sampling window
+    swap_out_per_sec = None
+    if pswpout_start is not None and pswpout_end is not None and window > 0:
+        swap_out_per_sec = (pswpout_end - pswpout_start) / window
+
+    # Memory: use median of samples to resist transient spikes
     mem_total = read_mem_total_mb()
+    valid_mem = [m for m in mem_samples if m is not None]
+    mem_avail = int(statistics.median(valid_mem)) if valid_mem else None
+
+    mem_used_mb = None
+    mem_used_pct = None
+    if mem_total is not None and mem_avail is not None:
+        mem_used_mb = max(mem_total - mem_avail, 0)
+        if mem_total > 0:
+            mem_used_pct = (mem_used_mb * 100.0) / mem_total
+
+    # Load, disk, inode: single read (stable or already kernel-averaged)
     load1 = read_load1()
     cpu_count = os.cpu_count() or 1
     disk_used_pct = read_root_disk_used_pct()
@@ -358,34 +416,6 @@ def collect_metrics(cfg, state, now_ts):
     services = {}
     for svc in cfg.get("services", ["ssh", "docker"]):
         services[svc] = service_active(svc)
-
-    iowait_pct = None
-    steal_pct = None
-    cpu_busy_pct = None
-    swap_out_per_sec = None
-
-    if state.get("last_cpu") and state.get("last_ts"):
-        prev = state["last_cpu"]
-        total_prev = sum(prev.values())
-        total_now = sum(cpu.values())
-        delta_total = total_now - total_prev
-        if delta_total > 0:
-            iowait_pct = (cpu["iowait"] - prev["iowait"]) * 100.0 / delta_total
-            steal_pct = (cpu["steal"] - prev["steal"]) * 100.0 / delta_total
-            delta_idle = (cpu["idle"] - prev["idle"]) + (cpu["iowait"] - prev["iowait"])
-            cpu_busy_pct = ((delta_total - delta_idle) * 100.0) / delta_total
-
-    if state.get("last_pswpout") is not None and state.get("last_ts"):
-        dt = now_ts - float(state["last_ts"])
-        if dt > 0:
-            swap_out_per_sec = (pswpout - int(state["last_pswpout"])) / dt
-
-    mem_used_mb = None
-    mem_used_pct = None
-    if mem_total is not None and mem_avail is not None:
-        mem_used_mb = max(mem_total - mem_avail, 0)
-        if mem_total > 0:
-            mem_used_pct = (mem_used_mb * 100.0) / mem_total
 
     metrics = {
         "iowait_pct": round(iowait_pct, 2) if iowait_pct is not None else None,
@@ -403,7 +433,7 @@ def collect_metrics(cfg, state, now_ts):
         "inode_used_pct": round(inode_used_pct, 2) if inode_used_pct is not None else None,
         "service_active": services,
     }
-    return cpu, pswpout, metrics
+    return metrics
 
 
 def run_once():
@@ -415,9 +445,6 @@ def run_once():
     state = load_json(
         STATE_PATH,
         {
-            "last_cpu": None,
-            "last_pswpout": None,
-            "last_ts": None,
             "breach_streak": 0,
             "last_alert_ts": 0,
             "incident_open": False,
@@ -425,7 +452,7 @@ def run_once():
     )
 
     now_ts = time.time()
-    cpu, pswpout, metrics = collect_metrics(cfg, state, now_ts)
+    metrics = collect_metrics(cfg)
 
     reasons = evaluate(cfg, state, metrics)
     if reasons:
@@ -474,9 +501,10 @@ def run_once():
             state["incident_open"] = False
             print(f"[{now_utc_iso()}] healthy")
 
-    state["last_cpu"] = cpu
-    state["last_pswpout"] = pswpout
-    state["last_ts"] = now_ts
+    # Clean up legacy state fields no longer needed (metrics are now
+    # computed within a sampling window, not from inter-run deltas).
+    for key in ("last_cpu", "last_pswpout", "last_ts"):
+        state.pop(key, None)
     save_json(STATE_PATH, state)
     return 0
 
@@ -535,16 +563,12 @@ def main():
         state = load_json(
             STATE_PATH,
             {
-                "last_cpu": None,
-                "last_pswpout": None,
-                "last_ts": None,
                 "breach_streak": 0,
                 "last_alert_ts": 0,
                 "incident_open": False,
             },
         )
-        now_ts = time.time()
-        _cpu, _pswpout, metrics = collect_metrics(cfg, state, now_ts)
+        metrics = collect_metrics(cfg)
         reasons = evaluate(cfg, state, metrics)
         print(
             json.dumps(
@@ -561,19 +585,7 @@ def main():
         return 0
 
     if args.verify_host:
-        state = load_json(
-            STATE_PATH,
-            {
-                "last_cpu": None,
-                "last_pswpout": None,
-                "last_ts": None,
-                "breach_streak": 0,
-                "last_alert_ts": 0,
-                "incident_open": False,
-            },
-        )
-        now_ts = time.time()
-        _cpu, _pswpout, metrics = collect_metrics(cfg, state, now_ts)
+        metrics = collect_metrics(cfg)
         in_container = os.path.exists("/.dockerenv")
         pid1_comm = read_pid1_comm()
         warnings = []
