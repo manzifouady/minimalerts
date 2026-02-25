@@ -26,7 +26,17 @@ CONFIG_PATH = os.environ.get("MONITOR_CONFIG_PATH", os.path.join(BASE_DIR, "conf
 STATE_PATH = os.environ.get("MONITOR_STATE_PATH", os.path.join(BASE_DIR, "state.json"))
 PROC_PATH = os.environ.get("MONITOR_PROC_PATH", "/proc")
 ROOT_PATH = os.environ.get("MONITOR_ROOT_PATH", "/")
-SAMPLE_WINDOW_SEC = max(0, float(os.environ.get("MONITOR_SAMPLE_WINDOW_SEC", "5")))
+
+
+def parse_sample_window_sec():
+    raw = os.environ.get("MONITOR_SAMPLE_WINDOW_SEC", "5")
+    try:
+        return max(0.0, float(raw))
+    except (TypeError, ValueError):
+        return 5.0
+
+
+SAMPLE_WINDOW_SEC = parse_sample_window_sec()
 
 
 def now_utc_iso():
